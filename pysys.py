@@ -63,7 +63,7 @@ def SCENARIO(   System,
 
 
 
-class System:
+class SYSTEM:
     
     def __init__(self, name="", id=str(uuid.uuid4())):
         self.name, self.id = name, id        
