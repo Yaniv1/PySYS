@@ -1,105 +1,131 @@
 # PySYS
 
-PySYS is a small Python modeling framework for representing systems with Object Process Methodology-style building blocks. It provides base classes for objects, processes, states, and executable models, plus a TaxiBot example that compares aircraft taxiing scenarios.
+PySYS is a lightweight Python mechanism for modeling a system, its environment, and the processes that change their states over time. PySYS is based on **Object Process Methodology (OPM)**. 
+`pysys.py` gives you a few generic building blocks, then demonstrates them with an executable scenario.
 
-## Repository Layout
+## What It Provides
 
-- `main/pysys.py` - lightweight core classes: `THING`, `OBJECT`, `PROCESS`, and `System`.
-- `pysys.py` - same lightweight core module at the project root.
-- `sysmodel.py` - fuller modeling toolkit with `STATE`, `MODEL`, threaded `PROCESS` execution, snapshots, and the `@BEHAVIOR` decorator.
-- `taxiing.py` - TaxiBot domain model, scenario summaries, and a synchronous scenario runner.
-- `taxiing_opm.txt` - source OPM/OPL-style model text for the TaxiBot example.
-- `generic_instructions.txt` and `specific_instructions.txt` - modeling/code-generation guidance.
-- `Scenarios/` - generated scenario output files.
+- `THING` - the common base class for named model elements with IDs, owned objects, and owned processes.
+- `OBJECT` - a state-bearing thing. It can hold a list of possible `STATES` and a current `state`.
+- `PROCESS` - a wrapper around a behavior function that can be run with `RUN(...)`.
+- `SYSTEM` - a runnable container that can receive inputs, expose outputs, activate, deactivate, and execute functions on a timed cycle.
+- `SCENARIO(...)` - a simple scenario runner that applies step functions to a `System` and an `Environment`.
+
+The mechanism is useful when you want to describe how a system and its environment influence each other without committing to a heavy simulation framework.
 
 ## Requirements
 
-The examples use Python 3 and these packages:
+The current module uses only the Python standard library.
 
 ```bash
-pip install pandas numpy
+python pysys.py
 ```
 
-## Core Concepts
+## Core Mechanism
 
-`THING` is the shared base entity. It stores a name, ID, sub-objects, and sub-processes.
-
-`OBJECT` represents a model object and stores its states.
-
-`PROCESS` represents behavior. A process can wrap a callable and execute it with `RUN(...)`.
-
-`MODEL` groups free objects and processes and can execute or snapshot a model.
-
-`@BEHAVIOR` decorates model behavior functions so they can be attached to a `PROCESS`.
-
-## Quick Start
-
-From the `PYSYS` directory:
+A model is built from state-bearing objects attached to a `SYSTEM`. Scenario steps are plain Python functions that accept:
 
 ```python
-from sysmodel import OBJECT, PROCESS, MODEL, BEHAVIOR
-
-class Battery(OBJECT):
-    def __init__(self):
-        super().__init__(name="Battery", states={"charge": 100})
-
-@BEHAVIOR
-def drain(model, context, amount=10):
-    battery = next(obj for obj in model.OBJECTS if obj.NAME == "Battery")
-    battery.STATES["charge"] -= amount
-    context["self"]._running = False
-    return {"charge": battery.STATES["charge"]}
-
-battery = Battery()
-drain_process = PROCESS(name="Drain", behavior=drain, verbose=False)
-battery.PROCESSES.append(drain_process)
-
-model = MODEL(objects=[battery], processes=[drain_process])
-result = drain_process.RUN(model, amount=15)
-
-print(result)
-print(battery.STATES)
+System, Environment
 ```
 
-## TaxiBot Example
+Each step updates one or both containers, then returns:
 
-The TaxiBot model defines three scenario summaries:
+```python
+return System, Environment
+```
 
-- `baseline` - aircraft taxis without TaxiBot.
-- `taxibot` - TaxiBot moves the aircraft for the full taxi distance.
-- `hybrid` - TaxiBot handles part of the taxi distance, then aircraft engines complete the trip.
+`SCENARIO(...)` executes those steps in order, prints the system and environment after each step, and reports final system state information.
+
+## Example Scenario
+
+The included example creates a simple complement relationship between a system number and an environment number.
+
+```python
+STATE_VAR = 'Number'
+STATE_VAR_STATES = list(range(10))
+```
+
+Both the system and the environment receive a `Number` object whose valid states are `0` through `9`.
+
+```python
+MySystem = SYSTEM('MY System', id='MySys')
+Environment = SYSTEM('Enviornemnt', id='Env')
+
+setattr(Environment, STATE_VAR, OBJECT(STATE_VAR, states=STATE_VAR_STATES))
+setattr(MySystem, STATE_VAR, OBJECT(STATE_VAR, states=STATE_VAR_STATES))
+```
+
+The `complement` step randomly chooses an environment state, copies the `Number` object, updates the environment, then sets the system state to the complementary value from the same state list.
+
+```python
+def complement(System, Environment):
+    new_env_state_idx = random.randint(0, len(STATE_VAR_STATES) - 1)
+    new_env_state = STATE_VAR_STATES[new_env_state_idx]
+
+    env_state_var = copy.deepcopy(getattr(Environment, STATE_VAR))
+    env_state_var.state = new_env_state
+    setattr(Environment, STATE_VAR, env_state_var)
+
+    new_sys_state = STATE_VAR_STATES[-new_env_state_idx]
+    sys_state_var = copy.deepcopy(getattr(System, STATE_VAR))
+    sys_state_var.state = new_sys_state
+    setattr(System, STATE_VAR, sys_state_var)
+
+    return System, Environment
+```
+
+The baseline scenario runs that same step ten times:
+
+```python
+SCENARIO(
+    MySystem,
+    Environment,
+    name="Baseline Scenario",
+    steps=[complement for i in range(10)],
+)
+```
+
+Running `python pysys.py` activates the system and environment, executes the scenario, prints each step, and deactivates both containers at the end.
+
+## What This Can Be Used For
+
+This pattern can be used for small, inspectable simulations where the important part is how state changes over a sequence of steps.
+
+Good fits include:
+
+- System-environment interaction models.
+- Early architecture or concept-of-operations experiments.
+- State-machine-like behavior prototypes.
+- Scenario playback for requirements or OPM-inspired models.
+- Monte Carlo-style experiments where environment inputs vary randomly.
+- Teaching examples for objects, processes, state transitions, and threaded execution.
+- Lightweight digital twin sketches before introducing a larger simulation stack.
+
+## Extending A Scenario
+
+To create a new scenario:
+
+1. Define one or more `OBJECT` instances with possible states.
+2. Attach those objects to a `SYSTEM` or environment with `setattr(...)`.
+3. Write step functions that accept and return `(System, Environment)`.
+4. Pass the step functions to `SCENARIO(...)` in the order you want them executed.
 
 Example:
 
 ```python
-from taxiing import (
-    scenario_summary_baseline,
-    scenario_summary_taxibot,
-    scenario_summary_hybrid,
-    run_scenario_simulation,
-)
+def set_environment_to_zero(System, Environment):
+    number = copy.deepcopy(getattr(Environment, "Number"))
+    number.state = 0
+    setattr(Environment, "Number", number)
+    return System, Environment
 
-print(scenario_summary_baseline())
-print(scenario_summary_taxibot())
-print(scenario_summary_hybrid())
-
-df, summary = run_scenario_simulation(mode="hybrid", switch_distance_m=750)
-print(summary)
-print(df)
-```
-
-To save a simulation result:
-
-```python
-df, summary = run_scenario_simulation(
-    mode="taxibot",
-    store=True,
-    store_path="Scenarios/Taxiing/taxibot.csv",
-)
+SCENARIO(MySystem, Environment, steps=[set_environment_to_zero, complement])
 ```
 
 ## Notes
 
-- The TaxiBot model currently assumes a 1,500 m taxi distance and 10 m/s taxi speed.
-- The hybrid scenario defaults to switching at 50% of the taxi distance because the OPL model does not specify a switch point.
-- Some framework pieces are still experimental. For example, `main/pysys.py` contains a minimal `SCENARIO` helper, while the fuller execution path lives in `sysmodel.py` and `taxiing.py`.
+- The current scenario runner is deliberately simple and prints directly to the console.
+- `SYSTEM.activate()` starts a background thread that repeatedly calls `run(...)`.
+- Scenario steps are synchronous; they update and return the current system/environment pair.
+- `OBJECT.STATES` stores allowed or known states, while `OBJECT.state` stores the current state.
