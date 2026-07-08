@@ -35,41 +35,67 @@ class PROCESS(THING):
 
 
 
-
-
+# defining a class SYSTEM that represents a system with a name and an ID. 
 class SYSTEM:
     
+    # constructor method that initializes the SYSTEM object with a name and an ID. If no name is provided, it defaults to an empty string. 
+    # If no ID is provided, it generates a unique ID using the uuid module.
+    # the constructor's first parameter is always self, which refers to the instance of the class being created. 
+    # This allows us to access and modify the instance's attributes and methods within the class.
     def __init__(self, name="", id=str(uuid.uuid4())):
-        self.name, self.id = name, id        
+        self.name, self.id = name, id   
+
+        # the constructor calls another method of the class which deactivates the system - we don't know how yet.
+        # but this is a common pattern to separate concerns and behaviors - what vs how.
         self.deactivate()
                 
+    # a method that takes any number of keyword arguments and sets the corresponding attributes of the SYSTEM instance to the provided values.
     def get_input(self, **kwargs):
         for k,v in kwargs.items():
             setattr(self,k,v)
             
+    # a method that returns a dictionary containing the attributes of the SYSTEM instance.
+    # if the attributes parameter is provided, it filters the output to include only those attributes; otherwise, it returns all attributes.
     def provide_output(self, attributes=[]):
         return {k:v for k,v in self.__dict__.items() if k in attributes or attributes==[]}
-    def activate(self):
-        
-        self.get_input(state='ON')        
-        self._running = True
-        self.thread = threading.Thread(target=self.run, daemon=True)
+    
+
+    # a method that activates the system by setting its state to 'ON', starting a new thread to run the system's main loop, and setting the _running attribute to True.
+    def activate(self, do=[{"func":print, "args":[], "kwargs":{}}], cycle=1.0, cycles=10):        
+        self.get_input(state='ON', _running=True, do=do, cycle=cycle, cycles=cycles)
+        # a thread is created to run the system's main loop in the background.
+        # a thread is a separate flow of execution that allows the program to perform multiple tasks concurrently. 
+        # In this case, the thread will run the run() method of the SYSTEM class, which contains the main loop of the system.
+        self.thread = threading.Thread(target=self.run, kwargs={"cycle": cycle, "cycles": cycles}, daemon=True)
         self.thread.start()       
         
+    # a method that deactivates the system by setting its state to 'OFF' and setting the _running attribute to False, which will stop the main loop in the run() method.
     def deactivate(self):
-        self.get_input(state='OFF')
-        self._running = False        
+        self.get_input(state='OFF', _running=False)
         
-    def run(self, do=[print], cycle=1.0):
+    # a method that runs the main loop of the system. 
+    # It takes a list of functions to execute (do) and a cycle time (cycle) as parameters. The loop continues to run as long as the _running attribute is True.
+    def run(self, cycle=1.0, cycles=10):
         self.cycle = cycle
-        while getattr(self,'_running',False):
-            self.pclock = getattr(self,'clock',time.time())
+        cycle_count = 0
+        while getattr(self,'_running',False) and (cycle_count < cycles):
+            # runs the loop as long as the _running attribute is True. 
+            # The getattr() function is used to safely access the _running attribute, providing a default value of False if it doesn't exist.
+            self.pclock = time.time()
+            print(f"{self.name} running cycle {cycle_count+1}/{cycles} at{self.pclock} milliseconds with cycle time {cycle} seconds.")
+            # execute each function in the do list, passing each function its own arguments and keyword arguments. 
+            for f in getattr(self,'do',[{"func":print, "args":[], "kwargs":{}}]):
+                r = f.get("func", print)(*f.get("args", []), **f.get("kwargs", {}))
+                # if the return value of the function is a dictionary, it calls the get_input method to update the SYSTEM instance's attributes with the key-value pairs from the returned dictionary.
+                if type(r) is dict:
+                    self.get_input(**r)
+                # the results of each step function are stored in the variable r, which can be used for further processing or analysis if needed.
+            # the time.sleep() function is used to pause the execution of the loop for a duration calculated as the difference between the specified cycle time and the actual time taken for the current iteration of the loop.
+            cycle_count+=1
             self.clock = time.time()
-            self.interval = self.clock-self.pclock
-            for f in do:
-                f(self.__dict__)
-            time.sleep(cycle-(time.time()-self.clock))
-
+            elapsed = self.clock - self.pclock
+            print(f"{elapsed=} idle={cycle - elapsed}")
+            time.sleep(max(0, cycle - elapsed))
 
 
 # --------------------------
