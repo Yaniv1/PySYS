@@ -531,9 +531,6 @@ def demo(**kwargs):
                              cycle=0,
                              cycles=len(sample_times))
 
-        
-    # SCENARIO(MySystem, Environment, name="Baseline Scenario", 
-    #          steps=[complement for i in STATE_VAR_STATES])
 
     ModelManager.thread.join()
     MySystem.deactivate()
