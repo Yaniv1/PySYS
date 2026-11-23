@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import argparse
 import shutil
 import time
@@ -50,10 +51,14 @@ def target_location(target: str) -> tuple[Path | None, str | None]:
             raise ValueError("The target filename must end in .htm or .html.")
         return None, supplied_path.name
 
+    
+
     if supplied_path.is_dir() or not supplied_path.suffix:
         return supplied_path, None
     if supplied_path.suffix.lower() not in {".htm", ".html"}:
         raise ValueError("The target filename must end in .htm or .html.")
+
+        
     return supplied_path.parent, supplied_path.name
 
 
@@ -246,6 +251,7 @@ def get_model_spec(
     )
     if target_directory is not None:
         target_directory = target_directory.resolve()
+        os.makedirs(target_directory, exist_ok=True)
         if not target_directory.is_dir():
             raise ValueError(f"Target directory does not exist: {target_directory}")
     started_at = time.time()
