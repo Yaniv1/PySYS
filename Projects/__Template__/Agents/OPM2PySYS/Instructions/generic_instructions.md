@@ -1,4 +1,4 @@
-# GENERIC INSTRUCTIONS.txt
+# GENERIC INSTRUCTIONS
 
 
 1. Build a python module that represents a system based on the attached Object Process Methodology model's formal specification in Object Process Language (OPL) as part of the HTML report of the model.
@@ -6,7 +6,7 @@
 3. Create classes that inhreit from pysys.OBJECT for all the objects in the model before instantiating them as instances of their corresponding classes.
 4. Capture model processes as behavior functions that use the @BEHAVIOR decorator.
 
-4a. 4Create a SYSTEM instance for each top level systemic OBJECTs that exhibit PROCESSES and for each top level systemic PROCESS that is not owned by any object
+4a. Create a SYSTEM instance for each top level systemic OBJECTs that exhibit PROCESSES and for each top level systemic PROCESS that is not owned by any object
 4b. Create a SYSTEM instance for the ENVIORNMENT and include all the OBJECTS and PROCESSES that have environmenal affiliation.
 4c. If an OBJECT is just an operand and has no processes, do not initially create a SYSTEM for it - only an OBJECT instance.
 
@@ -37,3 +37,20 @@ General Instructions:
 6. define constants  and variables from the model as OBJECT instances just like the rest of the objects. Then list constants and variables as objects under the object or process that owns them. for example Define an OBJECT class (e.g., class Distance(OBJECT): ...) and instantiate them inside their owning process (so they show up as sub-objects of Taxiing),
 7. Store variables with units as tuples. Separate the numeric value for the units.
 8. there is no need to prefix or suffix code blocks like classes or functions. for example the taxiing behavior can simply be called taxiing withouth behavior_ prefix or _behavior suffix.
+
+Code Generation Mode:
+1. In refine mode, build on the existing Python module supplied in the prompt. Preserve compatible code and resources, and change only what is required by the model or instructions.
+2. In regenerate mode, ignore any existing Python module and create the outcome implementation from scratch.
+
+Solution Creation Instuctions:
+1. Always provide a direct entry point through a main() function that will be executed if the model file is excuted directly (using the conventional `if __name__=="__main__":` clause)
+2. Always create the environmental system before you create the system of interest.
+3. Provide an environment-owned input consumption function that will collect values for all the environmental entities.
+
+Best Practices:
+1. Create a readme.md file that describes the solution in its final shape.
+2. Create a update.md file that describes what changed with each version. For new versions prepend version update summary at the top of the file:
+```
+# Version { %Y-%m-%d %H:%M:%S }
+{ Version Summary - What changed from the previous version}
+```

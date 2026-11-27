@@ -124,7 +124,7 @@ class MODEL(THING):
     def __init__(self, **kwargs):
         self.REF_ATTRS = MODEL_ATTRS
         super().__init__(**kwargs)
-        self.URL = opcloud.export_url(opcloud.construct_url(self.ID))
+        self.URL = opcloud.export_url(opcloud.construct_opcloud_url(self.ID))
 
     def load(self):        
         self.spec_info = opcloud.get_model_spec(self.URL)
@@ -321,7 +321,7 @@ THING_ATTRS = {
 
 MODEL_ATTRS = {
     **CORE_ATTRS,
-    "URL": {"type": str, "card": "1", "default": lambda id: opcloud.export_url(opcloud.construct_url(id)), "semantics": "The URL of the MODEL."},
+    "URL": {"type": str, "card": "1", "default": lambda id: opcloud.export_url(opcloud.construct_opcloud_url(id)), "semantics": "The URL of the MODEL."},
     "THINGS": {"type": THING, "card": "*", "semantics": "A list of THING items contained in the MODEL."},
 }
 

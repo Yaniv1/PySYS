@@ -1,0 +1,46 @@
+{
+    "ProjectName": "__Template__",
+    "DefaultProjectRoot": "~/Code/PySYS-Projects",
+    "Downloads": "~/Downloads",
+    "Timeout": 300,
+    "ReloadModel": true,
+    "RefineCode": true,
+    "RegenerateCode": false,
+    "RunCode": false,
+    "Git": {
+        "Action": "none",
+        "Source": null,
+        "Branch": null
+    },
+    "Artifacts": {
+        "Models": "Artifacts/Models",
+        "Requests": "Requests",
+        "Code": "~/Code/PySYS-Projects",
+        "Images": "Artifacts/Images",
+        "Results": "Results"
+    },
+    "CodeResources": [
+        "pysys.py",
+        "plotting.py",
+        "requirements.txt",
+        "build.ps1",
+        "opcloud.py",
+        "ai_services.py"
+    ],
+    "OutputFile": "pysys_model.py",
+    "Instructions": "Projects/__Template__/Agents/OPM2PySYS/Instructions/base.json",
+    "LanguageModelSettings": {
+        "provider": "openai",
+        "model": "gpt-6.2-sol",
+        "api_key": "OPENAI_API_KEY",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "api_format": "chat_completions",
+        "input_cost_usd_per_million": 2.0,
+        "cached_input_cost_usd_per_million": 0.10,
+        "output_cost_usd_per_million": 10.0,
+        "long_input_cost_usd_per_million": 4.0,
+        "long_cached_input_cost_usd_per_million": 0.20,
+        "long_output_cost_usd_per_million": 15.0,
+        "reasoning": {"effort": "medium"}
+    }
+}

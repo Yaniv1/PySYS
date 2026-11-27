@@ -1,0 +1,26 @@
+{
+    "Project": "__Template__",
+    "Task": "Convert an OPM model to a PySys model.",
+    "OpcloudModel": "model.html",
+    "Target": "project root",
+    "References": {
+        "PySYS": "pysys.py"        
+    },
+    "SpecificInstructions": "project_instructions.md",
+    "GenericInstructions": "generic_instructions.md",
+    "LanguageModelSettings": {
+        "provider": "openai",
+        "model": "gpt-6.2-sol",
+        "api_key": "OPENAI_API_KEY",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "api_format": "chat_completions",
+        "input_cost_usd_per_million": 2.0,
+        "cached_input_cost_usd_per_million": 0.10,
+        "output_cost_usd_per_million": 10.0,
+        "long_input_cost_usd_per_million": 4.0,
+        "long_cached_input_cost_usd_per_million": 0.20,
+        "long_output_cost_usd_per_million": 15.0,
+        "reasoning": {"effort": "medium"},
+        "timeout": 300
+    }
+}

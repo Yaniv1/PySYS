@@ -21,6 +21,29 @@ separate threaded simulation demo.
 
 The mechanism is useful when you want to describe how a system and its environment influence each other without committing to a heavy simulation framework.
 
+## Building a project
+
+Run the project-local build script:
+
+```powershell
+.\.venv\Scripts\python.exe --version
+.\build.ps1
+```
+
+`build.ps1` creates `.venv`, installs `requirements.txt`, activates the environment
+for the current PowerShell session, and sets these defaults from `Params/params.json`
+unless they are already set:
+
+- `PYSYS_TIMEOUT`
+- `PYSYS_OUTPUT_FILE`
+- `PYSYS_RUN_CODE`
+- `PYSYS_MODEL`
+- `PYSYS_ENDPOINT`
+- `PYSYS_REASONING_EFFORT`
+
+Use `.\build.ps1 -NoActivate` to create/install without activation, or
+`.\build.ps1 -Upgrade` to upgrade all requirements.
+
 ## Requirements
 
 Python 3.10 or later is required. On Windows, run the build script from the
@@ -64,6 +87,89 @@ Downloads. If your browser uses another directory, provide it as
 
 Avoid downloading unrelated HTML files at the same time: the script selects the
 newest HTML file modified after the export started and cannot verify its origin.
+
+### Creating projects and converting OPM models
+
+Create a project from the template and activate the OPM-to-PySYS agent with:
+
+```powershell
+.\.venv\Scripts\python.exe opcloud.py `
+  source=https://opcloud.systems/load/MODEL_ID `
+  project=MyProject `
+  agent=OPM2PySYS
+```
+
+`target=PROJECT_ROOT` is the project root. The downloaded OPM HTML is stored under
+`PROJECT_ROOT/Artifacts/Models`, and project params are stored under
+`PROJECT_ROOT/Params`. If `target` is omitted, the default project root
+`~/Code/PySYS-Projects/NAME` is read from `Params/params.json` in the template.
+Existing files are preserved; only missing template files and directories are copied.
+
+The generated software is written according to `Artifacts.Code`. An absolute
+code location is used as-is; a relative code location is resolved from the
+project root. `CodeResources` lists the framework resources copied into the code
+location, including `pysys.py` by default.
+
+The agent resolves `Projects/__Template__/Agents/OPM2PySYS/Instructions/base.json`
+and referenced files into a plain prompt. Each request and raw response is stored
+under the project's `Requests` directory in timestamped folders. The generated
+Python is syntax-checked and executed in a temporary sandbox before it is written
+to `pysys_model.py` in the project folder.
+
+LLM settings can be overridden for a run:
+
+```powershell
+api_key=... model=MODEL_NAME endpoint=https://HOST/v1/chat/completions
+```
+
+Prefer setting `OPENAI_API_KEY` instead of placing an API key on the command line.
+
+Reasoning effort can be set to `low`, `medium`, `high`, `xhigh`, or `max`:
+
+```powershell
+reasoning_effort=high
+```
+
+Explicit workflow flags default to values in `Params/params.json`:
+
+```powershell
+reload_model=true
+refine_code=true
+regenerate_code=false
+run_code=false
+```
+
+With `reload_model=false`, the latest HTML model under `Artifacts.Models` is used
+instead of contacting OpCloud. `refine_code=true` uses the existing module under
+`Artifacts.Code` as a base and asks the agent to refine it. `regenerate_code=true`
+ignores existing code and creates it from scratch. The two generation flags are
+mutually exclusive. With both false, the existing output file is reused without
+an LLM call. With `run_code=true`, the selected code is executed after generation
+or reuse.
+
+Git repositories can be initialized or cloned in `Artifacts.Code`:
+
+```powershell
+git=create
+git=clone git_source="C:\Repos\FlightReservation"
+git=clone git_source="https://github.com/ORG/REPOSITORY.git" git_branch=main
+```
+
+If `git=create`, the code directory is initialized with `git init`. If
+`git=clone`, the source may be a local path or remote URL. An existing Git
+repository in `Artifacts.Code` is detected and left unchanged.
+
+If a target code folder contains files but is not a Git repository, it is
+renamed to a sibling `<Folder>_pre_git_<timestamp>` folder. A fresh code folder
+is created, initialized or cloned, and the preserved contents are copied back.
+All preserved contents are committed as a local baseline so subsequent refinements
+and regeneration are visible as Git changes.
+
+Git repositories are created under the project-specific code folder:
+`<Artifacts.Code>/<ProjectName>`. For example, a FlightReservation project uses
+`C:\Users\ymord\Code\PySYS-Projects\FlightReservation`. Framework resources listed
+by `CodeResources` are first stored in the project's `Resources` directory, so
+each project retains an independent resource version.
 
 ## Framework concepts
 
